@@ -44,9 +44,9 @@ const Login = () => {
       setUser(res.data.user); 
       alert(res.data.message);
 
-      if (res.data.user.profilePic && res.data.user.profilePic.trim() !== "") {
+      if (res.data.user.profilePic) {
           navigate("/dashboard");
-      } else { 
+      } else {
           navigate("/profile");
       }
 

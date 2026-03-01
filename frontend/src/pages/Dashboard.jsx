@@ -13,7 +13,7 @@ const Dashboard = () => {
         const res = await axiosInstance.get("/users");
         setUsers(res.data);
       } catch (err) {
-        console.error("ইউজার লিস্ট লোড করতে সমস্যা হয়েছে", err);
+        console.error("There was a problem loading the user list", err);
       }
     };
     fetchUsers();

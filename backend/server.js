@@ -2,87 +2,65 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const http = require('http'); 
+const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path');
-const multer = require('multer');
 
 const app = express();
-const server = http.createServer(app); 
+const server = http.createServer(app);
+
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://real-time-caht.vercel.app" 
+];
+
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+}));
 
 const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:5173", 
-    methods: ["GET", "POST"]
-  }
+    cors: {
+        origin: allowedOrigins,
+        methods: ["GET", "POST"]
+    }
 });
-const port = process.env.PORT || 4000;
 
-app.use(cors());  
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => { cb(null, 'uploads/'); },
-  filename: (req, file, cb) => { cb(null, Date.now() + '-' + file.originalname); }
-});
-const upload = multer({ storage });
 
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.error('Could not connect to MongoDB', err));
+    .then(() => console.log('✅ Connected to MongoDB Atlas'))
+    .catch((err) => console.error('❌ DB Connection Error:', err));
 
 const userRouter = require('./routes/authRoutes');
 app.use('/api', userRouter);
 
-app.get('/', (req, res) => {
-  res.send('Chat Server is Running!');
-});
+app.get('/', (req, res) => res.send('Chat Server is Running!'));
 
 let onlineUsers = [];
 
 io.on("connection", (socket) => {
-  console.log("New user connected:", socket.id);
-
-  socket.on("addUser", (userId) => {
-    if (userId) {
-      onlineUsers = onlineUsers.filter((user) => user.userId !== userId);
-      onlineUsers.push({ userId, socketId: socket.id });
-    }
-    console.log("Online Users:", onlineUsers);
-    io.emit("getUsers", onlineUsers);
-});
-
-socket.on("sendMessage", ({ senderId, receiverId, text, fileType, time }) => {
-  const receiver = onlineUsers.find((user) => String(user.userId) === String(receiverId));
-  if (receiver) {
-    io.to(receiver.socketId).emit("getMessage", {
-      senderId, 
-      text,
-      fileType,
-      time: time || new Date().toISOString(),
+    socket.on("addUser", (userId) => {
+        if (userId) {
+            onlineUsers = onlineUsers.filter((u) => u.userId !== userId);
+            onlineUsers.push({ userId, socketId: socket.id });
+        }
+        io.emit("getUsers", onlineUsers);
     });
-  }
-});
 
-socket.on("sendCallRequest", ({ to, from, roomID, type }) => {
-  const receiver = onlineUsers.find((user) => String(user.userId) === String(to));
-  if (receiver) {
-    io.to(receiver.socketId).emit("getCallRequest", {
-      from,
-      roomID,
-      type
+    socket.on("sendMessage", ({ senderId, receiverId, text, fileType, time }) => {
+        const receiver = onlineUsers.find((u) => String(u.userId) === String(receiverId));
+        if (receiver) {
+            io.to(receiver.socketId).emit("getMessage", {
+                senderId, text, fileType, time: time || new Date().toISOString()
+            });
+        }
     });
-  }
+
+    socket.on("disconnect", () => {
+        onlineUsers = onlineUsers.filter((u) => u.socketId !== socket.id);
+        io.emit("getUsers", onlineUsers);
+    });
 });
 
-socket.on("disconnect", () => {
-    console.log("User disconnected");
-    onlineUsers = onlineUsers.filter((user) => user.socketId !== socket.id);
-    io.emit("getUsers", onlineUsers);
-  });
-});
-
-server.listen(port, () => {
-  console.log(`Server is listening on port ${port}`);
-});
+const port = process.env.PORT || 4000;
+server.listen(port, () => console.log(`🚀 Server on port ${port}`));
