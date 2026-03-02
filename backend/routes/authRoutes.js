@@ -35,29 +35,28 @@ router.post('/signup', async (req, res) => {
         if(password !== confirmPassword ) return res.status(400).json({ message: 'Passwords do not match' });
 
         const existingUser = await User.findOne({ email });
-        if(existingUser) return res.status(400).json({ message: 'Email already registered' });
+        if(existingUser) {
+            return res.status(400).json({ message: 'Email already registered' });
+        }
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const hashPassword = await bcrypt.hash(password, 10);
+        
         const newUser = new User({ username, email, password: hashPassword, otp });
         await newUser.save();
 
-        res.status(201).json({ message: 'User created. Sending OTP to your email...' });
+        res.status(201).json({ message: 'OTP sent to your email.' });
 
         transporter.sendMail({
             from: 'atikurrahmanrana79@gmail.com',
             to: email,
             subject: 'Verify Your Email',
             text: `Your verification code is: ${otp}`
-        }).then(() => {
-            console.log("✅ Email sent in background to:", email);
-        }).catch((err) => {
-            console.error("❌ Background Email Error:", err.message);
-        });
-    } 
-    catch (error) {
-        console.error("❌ Nodemailer Error details:", error);
-        res.status(500).json({ message: 'User created but email failed', error: error.message });
+        }).catch(err => console.log("Background Email Error:", err.message));
+
+    } catch (error) {
+        console.error("Signup Error:", error);
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 

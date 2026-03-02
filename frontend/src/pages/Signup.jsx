@@ -20,9 +20,11 @@ const Signup = () => {
   const [otpInput, setOtpInput] = useState("");
   const [userEmail, setUserEmail] = useState("");
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
 
     let isValid = true;
 
@@ -60,7 +62,8 @@ const Signup = () => {
     }
 
     if (!isValid) return;
-
+    setLoading(true); 
+    
     try {
       const res = await axiosInstance.post("/signup", {
         username: fullname,   
