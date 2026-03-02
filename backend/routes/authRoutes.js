@@ -42,18 +42,19 @@ router.post('/signup', async (req, res) => {
         const newUser = new User({ username, email, password: hashPassword, otp });
         await newUser.save();
 
-        await transporter.sendMail({
-        from: 'atikurrahmanrana79@gmail.com',
-        to: email,
-        subject: 'Verify Your Email',
-        text: `Your verification code is: ${otp}`
-    });
-        console.log("✅ Email sent successfully to:", email);
+        const info = await transporter.sendMail({
+            from: '"ChatApp" <atikurrahmanrana79@gmail.com>',
+            to: email,
+            subject: 'Verify Your Email',
+            text: `Your verification code is: ${otp}`
+        });
+    
+        console.log("✅ Message sent: %s", info.messageId); 
         res.status(201).json({ message: 'OTP sent to your email.' });
     } 
     catch (error) {
-        console.error("❌ Nodemailer Error:", error); 
-        res.status(500).json({ message: 'Error sending email', error: error.message });
+        console.error("❌ Nodemailer Error details:", error);
+        res.status(500).json({ message: 'User created but email failed', error: error.message });
     }
 });
 
