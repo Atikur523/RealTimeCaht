@@ -3,7 +3,6 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const multer = require("multer");
-const nodemailer = require('nodemailer');
 
 const User = require('../models/User');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -11,21 +10,10 @@ const adminOnly = require("../middleware/adminOnly");
 
 const { storage: cloudinaryStorage } = require('../utils/cloudinary');
 const upload = multer({ storage: cloudinaryStorage });
+
 const { Resend } = require('resend');
 const resend = new Resend('re_ftDVp8WM_F3QcMzLXCEBA8JYLdrmM3bww');
 
-const transporter = nodemailer.createTransport({
-    host: '74.125.193.108',
-    port: 465,
-    secure: true,
-    auth: {
-        user: 'atikurrahmanrana79@gmail.com',
-        pass: 'bpvt fqie lhkd dqok'
-    },
-    tls: {
-        rejectUnauthorized: false
-    }
-});
 
 router.post('/signup', async (req, res) => {
     try {
@@ -115,8 +103,7 @@ router.get("/users", authMiddleware, async (req, res) => {
     } catch (error) { res.status(500).json({ message: "Server Error" }); }
 });
 
-router.post("/upload-profile-pic", authMiddleware, 
-upload.single("image"), async (req, res) => {
+router.post("/upload-profile-pic", authMiddleware, upload.single("image"), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: "No image uploaded" });
@@ -125,7 +112,6 @@ upload.single("image"), async (req, res) => {
         const user = await User.findById(req.user.id); 
         user.profilePic = req.file.path; 
         await user.save();
-        
         res.status(200).json({ message: "Success", profilePic: req.file.path });
     } 
     catch (error) {
@@ -138,7 +124,5 @@ router.post("/upload", upload.single("file"), (req, res) => {
     if (!req.file) return res.status(400).json({ message: "No file" });
     res.status(200).json({ url: req.file.path, type: req.file.mimetype });
 });
-
-
 
 module.exports = router;
