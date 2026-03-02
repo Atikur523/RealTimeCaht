@@ -10,7 +10,7 @@ cloudinary.config({
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'chat_app_uploads',
+    folder: 'profile_pics',
     allowed_formats: ['jpg', 'png', 'jpeg'],
   },
 });
