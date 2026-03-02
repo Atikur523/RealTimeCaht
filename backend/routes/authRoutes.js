@@ -14,14 +14,15 @@ const upload = multer({ storage: cloudinaryStorage });
 
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false, 
     auth: {
-        user: 'atikurrahmanrana79@gmail.com', 
+        user: 'atikurrahmanrana79@gmail.com',
         pass: 'bpvt fqie lhkd dqok' 
     },
     tls: {
-        rejectUnauthorized: false 
+        rejectUnauthorized: false,
+        minVersion: "TLSv1.2"
     }
 });
 
