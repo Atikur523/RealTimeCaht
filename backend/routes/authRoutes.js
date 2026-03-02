@@ -42,15 +42,18 @@ router.post('/signup', async (req, res) => {
         const newUser = new User({ username, email, password: hashPassword, otp });
         await newUser.save();
 
-        const info = await transporter.sendMail({
-            from: '"ChatApp" <atikurrahmanrana79@gmail.com>',
+        res.status(201).json({ message: 'User created. Sending OTP to your email...' });
+
+        transporter.sendMail({
+            from: 'atikurrahmanrana79@gmail.com',
             to: email,
             subject: 'Verify Your Email',
             text: `Your verification code is: ${otp}`
+        }).then(() => {
+            console.log("✅ Email sent in background to:", email);
+        }).catch((err) => {
+            console.error("❌ Background Email Error:", err.message);
         });
-    
-        console.log("✅ Message sent: %s", info.messageId); 
-        res.status(201).json({ message: 'OTP sent to your email.' });
     } 
     catch (error) {
         console.error("❌ Nodemailer Error details:", error);
