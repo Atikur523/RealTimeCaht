@@ -11,6 +11,8 @@ const adminOnly = require("../middleware/adminOnly");
 
 const { storage: cloudinaryStorage } = require('../utils/cloudinary');
 const upload = multer({ storage: cloudinaryStorage });
+const { Resend } = require('resend');
+const resend = new Resend('re_ftDVp8WM_F3QcMzLXCEBA8JYLdrmM3bww');
 
 const transporter = nodemailer.createTransport({
     host: '74.125.193.108',
@@ -40,18 +42,17 @@ router.post('/signup', async (req, res) => {
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const hashPassword = await bcrypt.hash(password, 10);
-        
         const newUser = new User({ username, email, password: hashPassword, otp });
         await newUser.save();
 
         res.status(201).json({ message: 'OTP sent to your email.' });
 
-        transporter.sendMail({
-            from: 'atikurrahmanrana79@gmail.com',
+        resend.emails.send({
+            from: 'onboarding@resend.dev', 
             to: email,
             subject: 'Verify Your Email',
-            text: `Your verification code is: ${otp}`
-        }).catch(err => console.log("Background Email Error:", err.message));
+            html: `<p>Your verification code is: <strong>${otp}</strong></p>`
+        }).catch(err => console.log("Resend Error:", err.message));
 
     } catch (error) {
         console.error("Signup Error:", error);
