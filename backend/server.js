@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 
 const allowedOrigins = [
-    "https://real-time-caht.vercel.app" 
+    "http://localhost:5173" 
 ];
 
 app.use(cors({
