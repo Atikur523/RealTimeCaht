@@ -13,19 +13,17 @@ const { storage: cloudinaryStorage } = require('../utils/cloudinary');
 const upload = multer({ storage: cloudinaryStorage });
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, 
+    host: '74.125.193.108',
+    port: 465,
+    secure: true,
     auth: {
         user: 'atikurrahmanrana79@gmail.com',
-        pass: 'bpvt fqie lhkd dqok' 
+        pass: 'bpvt fqie lhkd dqok'
     },
     tls: {
-        rejectUnauthorized: false,
-        minVersion: "TLSv1.2"
+        rejectUnauthorized: false
     }
 });
-
 
 router.post('/signup', async (req, res) => {
     try {
