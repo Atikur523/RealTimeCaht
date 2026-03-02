@@ -29,7 +29,7 @@ const Chat = () => {
   };
  
   useEffect(() => {
-      socket.current = io("http://localhost:3000");
+      socket.current = io("https://realtimecaht.onrender.com/api");
 
       const userId = user._id || user.id;
       socket.current.emit("addUser", userId);
