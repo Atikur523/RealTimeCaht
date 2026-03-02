@@ -115,14 +115,23 @@ router.get("/users", authMiddleware, async (req, res) => {
     } catch (error) { res.status(500).json({ message: "Server Error" }); }
 });
 
-router.post("/upload-profile-pic", authMiddleware, upload.single("image"), async (req, res) => {
+router.post("/upload-profile-pic", authMiddleware, 
+upload.single("image"), async (req, res) => {
     try {
-        if (!req.file) return res.status(400).json({ message: "No image uploaded" });
+        if (!req.file) {
+            return res.status(400).json({ message: "No image uploaded" });
+        }
+        
         const user = await User.findById(req.user.id); 
         user.profilePic = req.file.path; 
         await user.save();
+        
         res.status(200).json({ message: "Success", profilePic: req.file.path });
-    } catch (error) { res.status(500).json({ message: "Upload failed" }); }
+    } 
+    catch (error) {
+        console.error("Cloudinary Upload Error:", error); 
+        res.status(500).json({ message: "Upload failed", details: error.message });
+    }
 });
 
 router.post("/upload", upload.single("file"), (req, res) => {
