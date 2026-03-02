@@ -13,10 +13,15 @@ const { storage: cloudinaryStorage } = require('../utils/cloudinary');
 const upload = multer({ storage: cloudinaryStorage });
 
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
         user: 'atikurrahmanrana79@gmail.com', 
-        pass: 'bpvt fqie lhkd dqok'    
+        pass: 'bpvt fqie lhkd dqok' 
+    },
+    tls: {
+        rejectUnauthorized: false 
     }
 });
 
@@ -38,14 +43,17 @@ router.post('/signup', async (req, res) => {
         await newUser.save();
 
         await transporter.sendMail({
-            from: 'atikurrahmanrana79@gmail.com',
-            to: email,
-            subject: 'Verify Your Email - MyChatApp',
-            text: `Your verification code is: ${otp}`
-        });
+        from: 'atikurrahmanrana79@gmail.com',
+        to: email,
+        subject: 'Verify Your Email',
+        text: `Your verification code is: ${otp}`
+    });
+        console.log("✅ Email sent successfully to:", email);
         res.status(201).json({ message: 'OTP sent to your email.' });
-    } catch (error) {
-        res.status(500).json({ message: 'Server Error', error: error.message });
+    } 
+    catch (error) {
+        console.error("❌ Nodemailer Error:", error); 
+        res.status(500).json({ message: 'Error sending email', error: error.message });
     }
 });
 
@@ -117,5 +125,7 @@ router.post("/upload", upload.single("file"), (req, res) => {
     if (!req.file) return res.status(400).json({ message: "No file" });
     res.status(200).json({ url: req.file.path, type: req.file.mimetype });
 });
+
+
 
 module.exports = router;
