@@ -22,13 +22,20 @@ const Profile = () => {
     if (!selectedFile) return alert("Select an image first");
 
     const formData = new FormData();
-    formData.append("image", selectedFile);
+    formData.append("image", selectedFile); 
 
     try {
+      const token = localStorage.getItem("token"); 
+
       const res = await axiosInstance.post(
         "/upload-profile-pic",
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { 
+          headers: { 
+            "Content-Type": "multipart/form-data",
+            "Authorization": `Bearer ${token}` 
+          } 
+        }
       );
 
       const updatedUser = { ...user, profilePic: res.data.profilePic };
@@ -36,12 +43,11 @@ const Profile = () => {
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
       alert("Image uploaded successfully");
-      
       navigate("/dashboard");
 
     } catch (error) {
-      console.error(error);
-      alert("Upload failed");
+      console.error("Upload Error Details:", error.response?.data || error.message);
+      alert(error.response?.data?.message || "Upload failed");
     }
   };
 
