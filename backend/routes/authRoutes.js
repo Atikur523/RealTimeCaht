@@ -14,7 +14,6 @@ const upload = multer({ storage: cloudinaryStorage });
 const { Resend } = require('resend');
 const resend = new Resend('re_ftDVp8WM_F3QcMzLXCEBA8JYLdrmM3bww');
 
-
 router.post('/signup', async (req, res) => {
     try {
         const { username, email, password, confirmPassword } = req.body;
