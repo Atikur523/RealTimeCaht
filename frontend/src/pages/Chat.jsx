@@ -28,41 +28,56 @@ const Chat = () => {
     setMessage((prev) => prev + emojiData.emoji);
   };
  
+useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const userId = user._id || user.id;
+        const receiverId = receiver._id || receiver.id;
+        const res = await axiosInstance.get(`/messages/${userId}/${receiverId}`);
+        
+        const formattedMsgs = res.data.map(msg => ({
+          sender: msg.sender === userId ? "me" : "other",
+          text: msg.text,
+          time: msg.createdAt,
+          fileType: msg.fileType 
+        }));
+        setMessages(formattedMsgs);
+      } catch (err) {
+        console.error("Error fetching messages:", err);
+      }
+    };
+
+    if (receiver) fetchMessages();
+  }, [receiver, user]);
+
   useEffect(() => {
-      socket.current = io("https://realtimecaht.onrender.com/api");
+    socket.current = io("https://realtimecaht.onrender.com"); 
 
-      const userId = user._id || user.id;
-      socket.current.emit("addUser", userId);
+    const userId = user._id || user.id;
+    socket.current.emit("addUser", userId);
 
-      socket.current.off("getMessage").on("getMessage", (data) => {
-          const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
-          const incomingSenderId = String(data.senderId).trim();
+    socket.current.on("getMessage", (data) => {
+      const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
+      const incomingSenderId = String(data.senderId).trim();
 
-          console.log("Partner ID:", currentChatPartnerId); 
-          console.log("Sender ID:", incomingSenderId);
+      if (incomingSenderId === currentChatPartnerId) {
+        setMessages((prev) => [...prev, { 
+          sender: "other", 
+          text: data.text,
+          time: data.createdAt 
+        }]);
+      }
+    });
 
-          if (incomingSenderId === currentChatPartnerId) {
-              setMessages((prev) => [...prev, { 
-                  sender: "other", 
-                  text: data.text,
-                  fileType: data.fileType, 
-                  time: data.time 
-              }]);
-          }
-      });
+    socket.current.on("getCallRequest", (data) => {
+      const accept = window.confirm(`${data.from} You have a ${data.type} call. Join?`);
+      if (accept) handleCall(data.type === "Video"); 
+    });
 
-      socket.current.on("getCallRequest", (data) => {
-          const accept = window.confirm(`${data.from} 
-          You have a ${data.type} call. Do you want to join?`);
-          if (accept) {
-              handleCall(data.type === "Video"); 
-          }
-      });
-
-      return () => {
-          socket.current.disconnect();
-      };
-  }, [user, receiver]); 
+    return () => {
+      socket.current.disconnect();
+    };
+  }, [user, receiver]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });

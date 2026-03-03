@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
+const Message = require('./models/Message');
 
 const app = express();
 const server = http.createServer(app);
@@ -46,12 +47,25 @@ io.on("connection", (socket) => {
         io.emit("getUsers", onlineUsers);
     });
 
-    socket.on("sendMessage", ({ senderId, receiverId, text, fileType, time }) => {
-        const receiver = onlineUsers.find((u) => String(u.userId) === String(receiverId));
-        if (receiver) {
-            io.to(receiver.socketId).emit("getMessage", {
-                senderId, text, fileType, time: time || new Date().toISOString()
+    socket.on("sendMessage", async ({ senderId, receiverId, text }) => {
+        try {
+            const newMessage = new Message({
+                sender: senderId,
+                receiver: receiverId,
+                text: text
             });
+            await newMessage.save();
+
+            const receiver = onlineUsers.find((u) => String(u.userId) === String(receiverId));
+            if (receiver) {
+                io.to(receiver.socketId).emit("getMessage", {
+                    senderId,
+                    text,
+                    createdAt: newMessage.createdAt 
+                });
+            }
+        } catch (error) {
+            console.error("Message error:", error);
         }
     });
 

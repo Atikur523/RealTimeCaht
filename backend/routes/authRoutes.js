@@ -3,6 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const multer = require("multer");
+const Message = require('../models/Message');
 
 const User = require('../models/User');
 const authMiddleware = require('../middleware/authMiddleware');
@@ -129,6 +130,21 @@ router.post("/upload-profile-pic", authMiddleware, (req, res, next) => {
 router.post("/upload", upload.single("file"), (req, res) => {
     if (!req.file) return res.status(400).json({ message: "No file" });
     res.status(200).json({ url: req.file.path, type: req.file.mimetype });
+});
+
+router.get("/messages/:userId/:otherUserId", authMiddleware, async (req, res) => {
+    try {
+        const { userId, otherUserId } = req.params;
+        const messages = await Message.find({
+            $or: [
+                { sender: userId, receiver: otherUserId },
+                { sender: otherUserId, receiver: userId }
+            ]
+        }).sort({ createdAt: 1 });
+        res.status(200).json(messages);
+    } catch (error) {
+        res.status(500).json({ message: "Error fetching messages" });
+    }
 });
 
 module.exports = router;
