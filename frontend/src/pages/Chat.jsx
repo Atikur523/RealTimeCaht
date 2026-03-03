@@ -57,14 +57,15 @@ useEffect(() => {
     socket.current.emit("addUser", userId);
 
     socket.current.on("getMessage", (data) => {
-      const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
-      const incomingSenderId = String(data.senderId).trim();
+    const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
+    const incomingSenderId = String(data.senderId).trim();
 
       if (incomingSenderId === currentChatPartnerId) {
         setMessages((prev) => [...prev, { 
           sender: "other", 
           text: data.text,
-          time: data.createdAt 
+          fileType: data.fileType, 
+          time: data.time || data.createdAt 
         }]);
       }
     });
@@ -84,26 +85,28 @@ useEffect(() => {
   }, [messages]);
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+      const file = e.target.files[0];
+      if (!file) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
+      const formData = new FormData();
+      formData.append("file", file);
 
-    try {
-      const res = await axiosInstance.post("/upload", formData); 
-      const fileData = {
-        senderId: user._id || user.id,
-        receiverId: receiver._id || receiver.id,
-        text: res.data.url,
-        fileType: res.data.type,
-        time: new Date().toISOString(),
-      };
-      socket.current.emit("sendMessage", fileData);
-      setMessages((prev) => [...prev, { ...fileData, sender: "me" }]);
-    } catch (err) {
-      console.error("Upload failed", err);
-    }
+      try {
+          const res = await axiosInstance.post("/upload", formData); 
+          const fileData = {
+              senderId: user._id || user.id,
+              receiverId: receiver._id || receiver.id,
+              text: res.data.url,
+              fileType: res.data.type, 
+              time: new Date().toISOString(),
+          };
+
+          socket.current.emit("sendMessage", fileData);
+
+          setMessages((prev) => [...prev, { ...fileData, sender: "me" }]);
+      } catch (err) {
+          console.error("Upload failed", err);
+      }
   };
 
   const handleSendMessage = () => {
