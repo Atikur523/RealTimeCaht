@@ -36,6 +36,7 @@ useEffect(() => {
         const res = await axiosInstance.get(`/messages/${userId}/${receiverId}`);
         
         const formattedMsgs = res.data.map(msg => ({
+          _id: msg._id, 
           sender: msg.sender === userId ? "me" : "other",
           text: msg.text,
           time: msg.createdAt,
@@ -68,6 +69,9 @@ useEffect(() => {
                 time: data.time || new Date().toISOString()
             }]);
         }
+    });
+    socket.current.on("messageDeleted", (messageId) => {
+      setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
     });
 
     socket.current.on("getCallRequest", (data) => {
@@ -107,6 +111,23 @@ useEffect(() => {
       } catch (err) {
           console.error("Upload failed", err);
       }
+  };
+
+  const handleDeleteMessage = async (messageId) => {
+    if (window.confirm("Are you sure you want to delete this message?")) {
+        try {
+            await axiosInstance.delete(`/messages/${messageId}`);
+            
+            setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+
+            socket.current.emit("deleteMessage", { 
+                messageId, 
+                receiverId: receiver._id || receiver.id 
+            });
+        } catch (err) {
+            console.error("Delete failed", err);
+        }
+    }
   };
 
   const handleSendMessage = () => {
@@ -221,7 +242,7 @@ useEffect(() => {
       <div className="flex-1 overflow-y-auto p-4 flex flex-col 
       gap-4 md:w-[50%] m-auto w-full">
         {messages.map((msg, index) => (
-          <div key={index} ref={scrollRef} className={`flex items-end 
+          <div key={index} ref={scrollRef} className={`flex items-end group 
           gap-2 ${msg.sender === "me" ? "flex-row-reverse" : "flex-row"}`}>
             <img 
               className="w-8 h-8 rounded-full object-cover"
@@ -263,6 +284,15 @@ useEffect(() => {
               </p>
             </div>
 
+            {msg.sender === "me" && (
+                <button 
+                    onClick={() => handleDeleteMessage(msg._id)}
+                    className="text-red-400 hover:text-red-600 text-xs ml-2 
+                    opacity-0 group-hover:opacity-100 transition"
+                >
+                    Delete
+                </button>
+            )}
           </div>
         ))}
       </div>

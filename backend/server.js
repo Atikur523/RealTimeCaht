@@ -76,6 +76,13 @@ io.on("connection", (socket) => {
         onlineUsers = onlineUsers.filter((u) => u.socketId !== socket.id);
         io.emit("getUsers", onlineUsers);
     });
+
+    socket.on("deleteMessage", ({ messageId, receiverId }) => {
+        const receiver = onlineUsers.find((u) => String(u.userId) === String(receiverId));
+        if (receiver) {
+            io.to(receiver.socketId).emit("messageDeleted", messageId);
+        }
+    });
 });
 
 const port = process.env.PORT || 4000;
