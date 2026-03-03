@@ -58,17 +58,16 @@ useEffect(() => {
     socket.current.emit("addUser", userId);
 
     socket.current.on("getMessage", (data) => {
-        const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
-        const incomingSenderId = String(data.senderId).trim();
-
-        if (incomingSenderId === currentChatPartnerId) {
-            setMessages((prev) => [...prev, { 
-                sender: "other", 
-                text: data.text,
-                fileType: data.fileType, 
-                time: data.time || new Date().toISOString()
-            }]);
-        }
+      const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
+      if (String(data.senderId).trim() === currentChatPartnerId) {
+          setMessages((prev) => [...prev, { 
+              _id: data._id || Date.now().toString(), 
+              sender: "other", 
+              text: data.text,
+              fileType: data.fileType, 
+              time: data.time || new Date().toISOString()
+          }]);
+      }
     });
     socket.current.on("messageDeleted", (messageId) => {
       setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
@@ -287,8 +286,9 @@ useEffect(() => {
             {msg.sender === "me" && (
                 <button 
                     onClick={() => handleDeleteMessage(msg._id)}
-                    className="text-red-400 hover:text-red-600 text-xs ml-2 
-                    opacity-0 group-hover:opacity-100 transition"
+                    className="text-red-500 hover:text-red-700 text-[10px] ml-2 
+                    opacity-100 md:opacity-0 md:group-hover:opacity-100 
+                    transition-opacity duration-200 p-1"
                 >
                     Delete
                 </button>
