@@ -102,20 +102,27 @@ router.get("/users", authMiddleware, async (req, res) => {
     } catch (error) { res.status(500).json({ message: "Server Error" }); }
 });
 
-router.post("/upload-profile-pic", authMiddleware, upload.single("image"), async (req, res) => {
+router.post("/upload-profile-pic", authMiddleware, (req, res, next) => {
+    upload.single("image")(req, res, (err) => {
+        if (err) {
+            console.error("Multer/Cloudinary Error:", err);
+            return res.status(400).json({ message: "Upload failed", details: err.message });
+        }
+        next();
+    });
+}, async (req, res) => {
     try {
         if (!req.file) {
-            return res.status(400).json({ message: "No image uploaded" });
+            return res.status(400).json({ message: "No image file provided" });
         }
         
         const user = await User.findById(req.user.id); 
         user.profilePic = req.file.path; 
         await user.save();
+        
         res.status(200).json({ message: "Success", profilePic: req.file.path });
-    } 
-    catch (error) {
-        console.error("Cloudinary Upload Error:", error); 
-        res.status(500).json({ message: "Upload failed", details: error.message });
+    } catch (error) {
+        res.status(500).json({ message: "Database update failed" });
     }
 });
 
