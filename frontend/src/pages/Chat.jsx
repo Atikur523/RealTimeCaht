@@ -57,17 +57,17 @@ useEffect(() => {
     socket.current.emit("addUser", userId);
 
     socket.current.on("getMessage", (data) => {
-    const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
-    const incomingSenderId = String(data.senderId).trim();
+        const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
+        const incomingSenderId = String(data.senderId).trim();
 
-      if (incomingSenderId === currentChatPartnerId) {
-        setMessages((prev) => [...prev, { 
-          sender: "other", 
-          text: data.text,
-          fileType: data.fileType, 
-          time: data.time || data.createdAt 
-        }]);
-      }
+        if (incomingSenderId === currentChatPartnerId) {
+            setMessages((prev) => [...prev, { 
+                sender: "other", 
+                text: data.text,
+                fileType: data.fileType, 
+                time: data.time || new Date().toISOString()
+            }]);
+        }
     });
 
     socket.current.on("getCallRequest", (data) => {

@@ -47,12 +47,14 @@ io.on("connection", (socket) => {
         io.emit("getUsers", onlineUsers);
     });
 
-    socket.on("sendMessage", async ({ senderId, receiverId, text }) => {
+    socket.on("sendMessage", async ({ senderId, receiverId, text, fileType, time }) => {
         try {
             const newMessage = new Message({
                 sender: senderId,
                 receiver: receiverId,
-                text: text
+                text: text,
+                fileType: fileType, 
+                time: time
             });
             await newMessage.save();
 
@@ -61,7 +63,8 @@ io.on("connection", (socket) => {
                 io.to(receiver.socketId).emit("getMessage", {
                     senderId,
                     text,
-                    createdAt: newMessage.createdAt 
+                    fileType, 
+                    time
                 });
             }
         } catch (error) {
