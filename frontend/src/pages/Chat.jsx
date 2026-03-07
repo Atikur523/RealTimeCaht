@@ -426,5 +426,4 @@ useEffect(() => {
     </div>
   );
 };
-isDifferentChat
 export default Chat;
