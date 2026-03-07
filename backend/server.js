@@ -6,6 +6,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const Message = require('./models/Message');
 
+
 const app = express();
 const server = http.createServer(app);
 
@@ -39,6 +40,18 @@ app.get('/', (req, res) => res.send('Chat Server is Running!'));
 let onlineUsers = [];
 
 io.on("connection", (socket) => {
+    socket.on("sendCallRequest", (data) => {
+        const receiver = onlineUsers.find((u) => String(u.userId) === String(data.to));
+        if (receiver) {
+            io.to(receiver.socketId).emit("getCallRequest", {
+                from: data.from,
+                fromId: data.fromId,
+                type: data.type,
+                roomID: data.roomID
+            });
+        }
+    });
+
     socket.on("addUser", (userId) => {
         if (userId) {
             onlineUsers = onlineUsers.filter((u) => u.userId !== userId);

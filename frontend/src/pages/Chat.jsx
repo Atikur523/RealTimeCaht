@@ -11,6 +11,31 @@ import axiosInstance from "../api/axios";
 import { IoVideocam } from "react-icons/io5";
 import { RiPhoneFill } from "react-icons/ri";
 
+const speakNotification = (receiverName, senderName, type = "message") => {
+  const synth = window.speechSynthesis;
+  let text = "";
+  
+  if (type === "message") {
+    text = `হ্যালো ${receiverName}, আপনাকে রিয়েল টাইম চ্যাট এপ্লিকেশন থেকে ${senderName} মেসেজ পাঠাচ্ছে।`;
+  } else {
+    text = `হ্যালো ${receiverName}, আপনাকে রিয়েল টাইম চ্যাট এপ্লিকেশন থেকে ${senderName} একটি ${type} কল দিচ্ছে।`;
+  }
+
+  const utterThis = new SpeechSynthesisUtterance(text);
+  utterThis.lang = 'bn-BD'; 
+  utterThis.rate = 1.0;
+
+  utterThis.onend = () => {
+    const audioUrl = type === "message" 
+      ? 'https://res.cloudinary.com/db7793j7u/video/upload/v1692182000/notification_sound.mp3' 
+      : 'https://www.soundjay.com/buttons/beep-01a.mp3';
+      
+    const audio = new Audio(audioUrl);
+    audio.play().catch(err => console.log("সাউন্ড প্লে করতে সমস্যা হয়েছে:", err));
+  };
+  synth.speak(utterThis);
+};
+
 const Chat = () => {
   const { user } = useAuth();
   const location = useLocation();
@@ -58,26 +83,40 @@ useEffect(() => {
     socket.current.emit("addUser", userId);
 
     socket.current.on("getMessage", (data) => {
-      const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
-      if (String(data.senderId).trim() === currentChatPartnerId) {
-          setMessages((prev) => [...prev, { 
-              _id: data._id || Date.now().toString(), 
-              sender: "other", 
-              text: data.text,
-              fileType: data.fileType, 
-              time: data.time || new Date().toISOString()
-          }]);
-      }
+        const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
+        const senderIdFromSocket = String(data.senderId).trim();
+
+        const isUserOutside = document.visibilityState !== 'visible';
+        const isDifferentChat = senderIdFromSocket !== currentChatPartnerId; 
+
+        if (isUserOutside || isDifferentChat) {
+          speakNotification(user.username, isDifferentChat ? "অন্য একজন ইউজার" : receiver.username, "message");
+        }
+
+        if (senderIdFromSocket === currentChatPartnerId) {
+            setMessages((prev) => [...prev, { 
+                _id: data._id || Date.now().toString(), 
+                sender: "other", 
+                text: data.text,
+                fileType: data.fileType, 
+                time: data.time || new Date().toISOString()
+            }]);
+        }
     });
     socket.current.on("messageDeleted", (messageId) => {
       setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
     });
 
     socket.current.on("getCallRequest", (data) => {
-      const accept = window.confirm(`${data.from} You have a ${data.type} call. Join?`);
+      const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
+      
+      if (document.visibilityState !== 'visible' || String(data.fromId) !== currentChatPartnerId) {
+          speakNotification(user.username, data.from, data.type === "Video" ? "ভিডিও" : "অডিও");
+      }
+      
+      const accept = window.confirm(`${data.from} থেকে কল আসছে। জয়েন করবেন?`);
       if (accept) handleCall(data.type === "Video"); 
     });
-
     return () => {
       socket.current.disconnect();
     };
@@ -185,6 +224,7 @@ useEffect(() => {
     socket.current.emit("sendCallRequest", {
       to: receiver._id || receiver.id,
       from: user.username,
+      fromId: user._id || user.id,
       roomID: roomID,
       type: isVideoCall ? "Video" : "Audio"
     });
@@ -386,5 +426,5 @@ useEffect(() => {
     </div>
   );
 };
-
+isDifferentChat
 export default Chat;
