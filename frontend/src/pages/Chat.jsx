@@ -10,6 +10,7 @@ import { FaRegImage } from "react-icons/fa6";
 import axiosInstance from "../api/axios"; 
 import { IoVideocam } from "react-icons/io5";
 import { RiPhoneFill } from "react-icons/ri";
+import Notification from "../components/Notification";
 
 const speakNotification = (receiverName, senderName, type = "message") => {
   const synth = window.speechSynthesis;
@@ -48,12 +49,22 @@ const Chat = () => {
   const scrollRef = useRef();
   const [showEmoji, setShowEmoji] = useState(false);
   const [selectedImg, setSelectedImg] = useState(null);
+  const [notifications, setNotifications] = useState([]);
 
   const onEmojiClick = (emojiData) => {
     setMessage((prev) => prev + emojiData.emoji);
   };
  
-useEffect(() => {
+  const showNotification = (text) => {
+    const id = Date.now();
+    setNotifications((prev) => [...prev, { id, text }]);
+
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }, 3000);
+  };
+
+  useEffect(() => {
     const fetchMessages = async () => {
       try {
         const userId = user._id || user.id;
@@ -83,26 +94,31 @@ useEffect(() => {
     socket.current.emit("addUser", userId);
 
     socket.current.on("getMessage", (data) => {
-        const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
-        const senderIdFromSocket = String(data.senderId).trim();
+      const currentChatPartnerId = String(receiver?._id || receiver?.id).trim();
+      const senderIdFromSocket = String(data.senderId).trim();
 
-        const isUserOutside = document.visibilityState !== 'visible';
-        const isDifferentChat = senderIdFromSocket !== currentChatPartnerId; 
+      const isTabActive = document.visibilityState === "visible";
+      const isSameChat = senderIdFromSocket === currentChatPartnerId;
 
-        if (isUserOutside || isDifferentChat) {
-          speakNotification(user.username, isDifferentChat ? "অন্য একজন ইউজার" : receiver.username, "message");
-        }
+      if (!isTabActive) {
+          speakNotification(user.username, receiver?.username || "User", "message");
+      }
 
-        if (senderIdFromSocket === currentChatPartnerId) {
-            setMessages((prev) => [...prev, { 
-                _id: data._id || Date.now().toString(), 
-                sender: "other", 
-                text: data.text,
-                fileType: data.fileType, 
-                time: data.time || new Date().toISOString()
-            }]);
-        }
+      if (isTabActive && !isSameChat) {
+          showNotification(`📩 New message`);
+      }
+
+      if (isSameChat) {
+          setMessages((prev) => [...prev, { 
+              _id: data._id || Date.now().toString(), 
+              sender: "other", 
+              text: data.text,
+              fileType: data.fileType, 
+              time: data.time || new Date().toISOString()
+          }]);
+      }
     });
+
     socket.current.on("messageDeleted", (messageId) => {
       setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
     });
@@ -423,6 +439,14 @@ useEffect(() => {
           />
         </div>
       )}
+
+      {notifications.map((n) => (
+        <Notification 
+          key={n.id} 
+          message={n.text} 
+          onClose={() => setNotifications(prev => prev.filter(item => item.id !== n.id))}
+        />
+      ))}
     </div>
   );
 };

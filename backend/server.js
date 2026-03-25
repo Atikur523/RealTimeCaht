@@ -75,6 +75,7 @@ io.on("connection", (socket) => {
             if (receiver) {
                 io.to(receiver.socketId).emit("getMessage", {
                     senderId,
+                    senderName: "User", 
                     text,
                     fileType, 
                     time
