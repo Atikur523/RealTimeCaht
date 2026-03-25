@@ -13,9 +13,24 @@ import { RiPhoneFill } from "react-icons/ri";
 import Notification from "../components/Notification";
 
 const speakNotification = (receiverName, senderName, type = "message") => {
+  const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+  if (isMobile) {
+    const audioUrl =
+      type === "message"
+        ? "https://res.cloudinary.com/db7793j7u/video/upload/v1692182000/notification_sound.mp3"
+        : "https://www.soundjay.com/buttons/beep-01a.mp3";
+
+    const audio = new Audio(audioUrl);
+    audio.play().catch((err) => {
+      console.log("Mobile sound blocked:", err);
+    });
+    return;
+  }
+
   const synth = window.speechSynthesis;
+
   let text = "";
-  
   if (type === "message") {
     text = `হ্যালো ${receiverName}, আপনাকে রিয়েল টাইম চ্যাট এপ্লিকেশন থেকে ${senderName} মেসেজ পাঠাচ্ছে।`;
   } else {
@@ -23,17 +38,19 @@ const speakNotification = (receiverName, senderName, type = "message") => {
   }
 
   const utterThis = new SpeechSynthesisUtterance(text);
-  utterThis.lang = 'bn-BD'; 
+  utterThis.lang = "bn-BD";
   utterThis.rate = 1.0;
 
   utterThis.onend = () => {
-    const audioUrl = type === "message" 
-      ? 'https://res.cloudinary.com/db7793j7u/video/upload/v1692182000/notification_sound.mp3' 
-      : 'https://www.soundjay.com/buttons/beep-01a.mp3';
-      
+    const audioUrl =
+      type === "message"
+        ? "https://res.cloudinary.com/db7793j7u/video/upload/v1692182000/notification_sound.mp3"
+        : "https://www.soundjay.com/buttons/beep-01a.mp3";
+
     const audio = new Audio(audioUrl);
-    audio.play().catch(err => console.log("সাউন্ড প্লে করতে সমস্যা হয়েছে:", err));
+    audio.play().catch(() => {});
   };
+
   synth.speak(utterThis);
 };
 
@@ -50,11 +67,23 @@ const Chat = () => {
   const [showEmoji, setShowEmoji] = useState(false);
   const [selectedImg, setSelectedImg] = useState(null);
   const [notifications, setNotifications] = useState([]);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
 
   const onEmojiClick = (emojiData) => {
     setMessage((prev) => prev + emojiData.emoji);
   };
  
+  useEffect(() => {
+    const unlockAudio = () => {
+      const audio = new Audio();
+      audio.play().catch(() => {});
+      setAudioUnlocked(true);
+      document.removeEventListener("click", unlockAudio);
+    };
+
+    document.addEventListener("click", unlockAudio);
+  }, []);
+
   const showNotification = (text) => {
     const id = Date.now();
     setNotifications((prev) => [...prev, { id, text }]);
