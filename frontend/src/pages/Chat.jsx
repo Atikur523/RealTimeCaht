@@ -130,12 +130,10 @@ const Chat = () => {
       const isSameChat = senderIdFromSocket === currentChatPartnerId;
 
       if (!isTabActive) {
-        console.log("🔊 VOICE TRIGGER"); 
         speakNotification(user.username, receiver?.username || "User", "message");
       }
 
       if (isTabActive && !isSameChat) {
-        console.log("🔔 SHOW NOTIFICATION");
         showNotification(`📩 New message`);
       }
 
@@ -149,6 +147,7 @@ const Chat = () => {
           }]);
       }
     });
+
     socket.current.on("messageDeleted", (messageId) => {
       setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
     });
